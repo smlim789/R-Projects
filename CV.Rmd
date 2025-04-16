@@ -1,0 +1,115 @@
+---
+title: "CV"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Linear Discriminant Analysis
+```{r}
+auto <- ISLR2::Auto
+
+library(rsample)
+library(tidyverse)
+library(tidymodels)
+library(broom)
+library(gt)
+library(patchwork)
+library(tictoc)
+
+attach(auto)
+
+# Load my R package and set the ggplot theme
+library(dunnr)
+```
+
+# 1-1. Train-Validation sets
+```{r}
+numSim <- 10
+degree <-  8
+nobs   <- dim(auto)[1]
+MSE    <- array(0,c(numSim,degree))
+
+for (i in 1:numSim){
+  auto1  <- auto  %>% mutate(sid = sample(1:nobs), rem = sid%%2+1)
+  train  <- auto1 %>% filter(rem==1)
+  valid  <- auto1 %>% filter(rem==2)
+
+  for (j in 1:degree){
+   model    <- lm(mpg ~ poly(horsepower, j, raw=T), data = train)
+   MSE[i,j] <- mean((predict(model, valid)-valid$mpg)^2)
+  } 
+}
+```
+
+# 1-2. Graph for Train-Validation sets
+```{r}
+color=c("red","orange","blue4","darkgreen","blue","brown4","purple","brown","gold4","black")
+plot(1:degree, MSE[1,], col="white", ylim=c(15,max(MSE)), xlab="Degree", ylab="MSE", 
+     main=paste("Training and Validation:", numSim,"repetitions"))
+for(i in 1:numSim){
+lines(1:degree, MSE[i,], col=color[i], pch=19, type="b", lwd=2)
+}
+```
+
+# 2. LOOCV
+```{r}
+nauto  <- dim(auto)[1]
+degree <- 9
+MSE    <- array(0,c(nauto,degree))
+
+
+for (i in 1:nauto){
+  for (j in 1:degree){
+    mauto    <- auto[-i,]  
+    model    <- lm(mpg ~ poly(horsepower, j, raw=T), data = mauto)
+    MSE[i,j] <- (predict(model, auto[i,])-auto$mpg[i])^2
+  }
+}
+#round(MSE,5)
+LOOCV <- apply(MSE,2,mean)
+```
+
+# 2-2. Graph for LOOCV
+```{r}
+ plot(1:degree, LOOCV, col="white", ylim=c(15,27), xlab="Degree", ylab="MSE", main="LOOCV")
+lines(1:degree, LOOCV, col="red", pch=19, type="b", lwd=2)
+```
+
+
+# 3-1. k-fold Cross-Validation
+```{r}
+numSim <- 8
+k      <- 10
+degree <- 9
+nobs   <- dim(auto)[1]
+MSEk   <- array(0,c(k,degree))
+MSE    <- array(0,c(numSim,degree))
+
+for (l in 1:numSim){
+auto1  <- auto  %>% mutate(sid = sample(1:nobs), rem = sid%%k+1)
+  for (i in 1:k){
+    train <- auto1 %>% filter(rem != i)
+    valid <- auto1 %>% filter(rem == i)
+    for (j in 1:degree){
+      model  <- lm(mpg ~ poly(horsepower, j, raw=T), data = train)
+      MSEk[i,j] <- mean((predict(model, valid)-valid$mpg)^2)
+    }
+  }
+  MSE[l,] <- apply(MSEk,2,mean)
+} 
+```
+
+# 3-2. Graph for k-fold CV
+```{r}
+color=c("red","orange","blue4","darkgreen","blue","brown4","purple","brown","gold4","black")
+plot(1:degree, MSE[1,], col="white", ylim=c(15,35), xlab="Degree", ylab="MSE", main=paste("k-fold Cross Validation: k=",k,"(run",numSim,"times)"))
+for(i in 1:numSim){
+lines(1:degree, MSE[i,], col=color[i], pch=19, type="b", lwd=2)
+}
+```

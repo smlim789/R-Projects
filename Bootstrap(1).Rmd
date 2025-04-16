@@ -1,0 +1,118 @@
+---
+title: "Bootstrap"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Linear Discriminant Analysis
+```{r}
+library(mnormt)
+library(mvtnorm)
+library(tidyverse)
+library(dplyr)
+```
+
+# 1-1. Bivariate Normal Distribution
+```{r}
+x      <- seq(-4, 4, 0.1)
+y      <- seq(-5, 5, 0.1)
+mu     <- c(0, 0)
+sigx   <- 1
+sigy   <- 1
+sigxy1 <- 0.0
+sigxy2 <- 0.75
+
+Sigma1 <- matrix(c(sigx^2, sigxy1, sigxy1, sigy^2), nrow = 2)
+Sigma2 <- matrix(c(sigx^2, sigxy2, sigxy2, sigy^2), nrow = 2)
+
+f1 <- function(x, y) dmnorm(cbind(x, y), mu, Sigma1)
+f2 <- function(x, y) dmnorm(cbind(x, y), mu, Sigma2)
+z1 <- outer(x, y, f1)
+z2 <- outer(x, y, f2)
+ 
+#create surface plot
+persp(x, y, z1, theta = -30, phi = 25, shade = 0.05, col = "orange", 
+                expand = 0.5, r = 2, ltheta = 25, ticktype = "detailed")
+persp(x, y, z2, theta = -30, phi = 25, shade = 0.05, col = "gold", 
+                expand = 0.5, r = 2, ltheta = 25, ticktype = "detailed")
+
+```
+# 1-2. Simulaion daa for alpha
+```{r}
+numSim <- 1000
+nobs   <- 100
+sigx   <- 1
+sigy   <- sqrt(1.25)
+sigxy  <- 0.5
+Sigma  <- matrix(c(sigx^2, sigxy, sigxy, sigy^2), nrow = 2)
+alpha  <- array(0,numSim)
+
+True_alpha <- 0.6
+ 
+for (i in 1:numSim){
+dataxy <- rmvnorm(n = nobs, mean = c(0, 0), sigma = Sigma)
+x <- dataxy[,1]
+y <- dataxy[,2]
+alpha[i] <- (var(y)-cov(x, y))/(var(x)+var(y)-2*cov(x,y))
+}
+alphahat <- mean(alpha)
+stderr   <- sd(alpha)  
+
+# Print estimate of alpha and Stderr
+alphahat
+stderr
+```
+
+
+# 2-1. Bootstrapping for alpha
+```{r}
+mnormdata <- rmvnorm(n = nobs, mean = c(0, 0), sigma = Sigma)
+x <- mnormdata[,1]
+y <- mnormdata[,2]
+
+(var(y)-cov(x, y))/(var(x)+var(y)-2*cov(x,y))
+
+alphadata <- as.data.frame(cbind(x,y))
+balpha    <- array(0,numSim)
+
+bdata <- alphadata %>% 
+  rsample::bootstraps(times = numSim)
+
+for (i in 1:numSim){
+    idx   <- unlist(bdata$splits[[i]][2])
+    bootd <- alphadata[idx,]
+    balpha[i] <- (var(bootd$y)-cov(bootd$x, bootd$y))/(var(bootd$x)+var(bootd$y)-2*cov(bootd$x,bootd$y))
+}
+
+boot_stderr <- sd(balpha)  
+boot_stderr
+```
+
+
+# 2-2. Graph for Bootstrap
+```{r}
+
+library(hrbrthemes)
+par(mfrow=c(1,2))
+hist(alpha, col="orange", border="white", xlab=bquote(alpha), main="Tue")
+abline(v=True_alpha, col="red")
+hist(balpha, col="cyan"  , border="white", xlab=bquote(alpha), main="Bootstrap")
+abline(v=True_alpha, col="red")
+
+
+alphadata <- data.frame(methods=c(rep("1.True",numSim),rep("2.Bootstrap",numSim)), est=c(alpha, balpha))
+alphadata <- alphadata %>% mutate(methods=as.factor(alphadata$methods))
+
+ggplot(data=alphadata, aes(x=methods, y=est, fill=methods))+
+       geom_boxplot(show.legend = FALSE) + 
+       scale_fill_manual(values=c("orange","cyan")) +
+       theme_bw() +
+       ylab("alpha") +
+       ggtitle("Boxplots for alpha values")
+```

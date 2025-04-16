@@ -1,0 +1,25 @@
+---
+title: "Test_Rmarkdown"
+output:
+  word_document: default
+  html_document: default
+date: "2024-07-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 자체문서 작성 예시
+아래는 간단한 코드 작성 예시입니다.
+* Price = 50000
+* rate = 4%
+* 10년 후 가격은?
+
+```{r}
+price <- 50000
+rate <- 0.04
+price10 <- price*(1+rate)^10
+cat("10년 후 쌀 가격은 :", ceiling(price10), "원\n")
+```
+

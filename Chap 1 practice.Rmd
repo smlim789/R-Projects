@@ -1,0 +1,242 @@
+---
+title: "Iris"
+output: html_document
+editor_options: 
+chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Iris data
+```{r}
+library(datasets)
+iris <- read.csv("C:\\Users\\study\\Downloads\\iris.txt")
+head(iris)
+```
+
+## Attach the iris dataset
+```{r}
+attach(iris)
+```
+
+## Five number Summary of the numerical variables
+```{r}
+summary(iris)
+```
+
+## Sum, Mean and standartd deviation of Petal.Length
+
+```{r}
+sum(p.len)
+mean(p.len)
+sd(p.len)
+```
+
+## Find the sum, mean, median, and standard deviation of s.wid.
+```{r}
+
+```
+
+
+
+
+## Sum, Mean and standartd deviation of Sepal.Length, Sepal.Withd
+```{r}
+apply(iris[,1:2], 2, sum)
+apply(iris[,1:2], 2, mean)
+apply(iris[,1:2], 2, sd)
+```
+## Find Sum, Mean and Standartd Deviation of Petal.Length, and  Petal.Width
+```{r}
+
+```
+## Sum, Mean and standartd deviation of Petal.Length by class
+
+```{r}
+aggregate(p.len, by=list(class), FUN=mean)
+aggregate(p.len~class, FUN=mean)
+aggregate(p.len, by=list(class), FUN=sd)
+aggregate(p.len~class, FUN=sd)
+
+```
+
+
+## Find Sum, Mean and standartd deviation of Width.Length by class
+
+```{r}
+
+
+```
+
+
+
+## Use 'dplyr'
+```{r}
+library(dplyr)
+
+iris %>%
+  group_by(class) %>%
+  summarise(sum=sum(p.len), mean=mean(p.len), std=sd(p.len))
+
+iris %>%
+  group_by(class) %>%
+  summarise(across(c(p.len,s.len),sum))
+```
+
+## Use 'dplyr' to get median, min, and max of p.wid
+## Use 'dplyr' to get median of p.wid and s.wid
+```{r}
+
+
+
+```
+
+
+
+## Scatterplot Sepal.Length vs Petal.Length
+```{r}
+plot(s.len, p.len)
+```
+
+## Scatterplot Sepal.Length vs Petal.Length using a specific symbol
+```{r}
+plot(s.len, p.len, pch=18)
+```
+
+## Make a scatterplot for s.len and p.len with points of different colors by Species (class)
+```{r}
+class <- factor(class)
+plot(s.len, p.len,col=class, pch=19)
+```
+
+## Changing the axis labels, adding a title
+```{r}
+plot(s.len, p.len,
+     col=class, 
+     pch=19,
+     main="Scatterplot: length of Sepal vs  Petal",
+     xlab="length of Sepal",
+     ylab="length of Petal")
+```
+
+## Make a scatterplot for s.wid and p.wid with points of different colors by Species (class) with a symbol: solid triangle. Add the axis labels, adding a title.
+```{r}
+
+
+```
+
+
+
+
+
+
+
+
+
+## Make a histogram for Sepal.Width (red, break points=10).
+```{r}
+hist(s.wid, breaks=10)
+```
+
+
+## Make overlaying histograms for  
+## Sepal.Width:  color is red, break points is 10 and 
+## Sepal.Length: color is yellow, break points 20.
+## Change labels and title appropriately
+
+```{r}
+hist(s.wid, col="red", breaks=10, xlim=c(1,8))
+hist(s.len,col="yellow", breaks=20, add=TRUE)
+```
+
+## Make boxplots for Sepal.Width, Sepal.Length by species with Title
+## (assign colors red for setosa, yellow for versicolor and blue for virginica)
+```{r}
+boxplot(s.len ~ class, col=c("red", "yellow","blue"))
+boxplot(s.wid ~ class, col=c("red", "yellow","blue"))
+```
+
+
+
+
+
+
+
+
+
+
+## ggplot
+```{r}
+library(ggplot2)
+ggplot(data=iris, aes(x=s.len, y=p.len))+
+       geom_point()
+```
+
+
+## Make a scatterplot Sepal.Length vs Petal.Length with best fit line
+```{r}
+library(ggplot2)
+ggplot(data=iris, aes(x=s.len, y=p.len))+
+  geom_point() +                       
+  geom_smooth(method="lm")
+```
+
+## Make a scatterplot with bestSepal.Length vs Petal.Length
+## with best fit line by species
+
+```{r}
+ggplot(iris, aes(x=s.len, y=p.len, color=class, fill=class)) +
+       geom_point() +
+       geom_smooth(method="lm")
+```
+
+## Sshow three best fit lines on the three separated panel
+```{r}
+ggplot(iris, aes(x=s.len, y=p.len, color=class, fill=class)) +
+       geom_point() +
+       geom_smooth(method="lm") +
+       facet_wrap(~class)
+```
+
+
+
+## Make Boxplots of Sepal.Width by Species with labels and title
+
+```{r}
+ ggplot(data=iris, aes(x=class, y=s.wid)) + 
+        geom_boxplot()
+```
+```{r}
+ ggplot(data=iris, aes(x=class, y=s.wid)) + 
+        geom_boxplot()+
+        geom_jitter(width=0.05)
+```
+
+```{r}
+ ggplot(data=iris, aes(x=class, y=s.wid, fill=class)) + 
+        geom_boxplot()+
+        geom_jitter(width=0.05)
+```
+
+
+```{r}
+ggplot(data=iris, aes(x=class, y=s.wid, fill=class))+
+       geom_boxplot() +
+       geom_jitter(width=.05) +
+       theme_bw() +
+       xlab("Class") +
+       ylab("Sepal Width") +
+       ggtitle("Plot of Width of Sepal by Class")
+```
+
+
+
+## Make Boxplots of length of petal by class with labels and title. jitter with 0.1, theme_classic, change the name of axes.
+
+```{r}
+
+
+```
